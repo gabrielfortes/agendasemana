@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
-import { Activity, ActivityInput } from '@/lib/supabase';
+import { Activity, ActivityInput } from '@/lib/storage';
 import { COLORS, ColorKey, DAYS } from '@/lib/colors';
 
 type Props = {

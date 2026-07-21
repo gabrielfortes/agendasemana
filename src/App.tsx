@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
 import { Plus, CalendarDays, Clock, Pencil, Loader2, AlertCircle, Download, Check } from 'lucide-react';
-import { supabase, Activity, ActivityInput } from '@/lib/supabase';
+import { Activity, ActivityInput, listActivities, insertActivity, updateActivity, deleteActivity } from '@/lib/storage';
 import { COLORS, DAYS, DAYS_SHORT, colorByKey } from '@/lib/colors';
 import ActivityModal from '@/components/ActivityModal';
 
@@ -35,12 +35,12 @@ export default function App() {
   const load = async () => {
     setLoading(true);
     setError(null);
-    const { data, error } = await supabase
-      .from('activities')
-      .select('*')
-      .order('start_time', { ascending: true });
-    if (error) setError(error.message);
-    else setActivities(data ?? []);
+    try {
+      const data = await listActivities();
+      setActivities(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar atividades.');
+    }
     setLoading(false);
   };
 
@@ -70,20 +70,27 @@ export default function App() {
   };
 
   const save = async (input: ActivityInput, id?: string) => {
-    if (id) {
-      const { error } = await supabase.from('activities').update(input).eq('id', id);
-      if (error) { setError(error.message); return; }
-    } else {
-      const { error } = await supabase.from('activities').insert(input);
-      if (error) { setError(error.message); return; }
+    try {
+      if (id) {
+        await updateActivity(id, input);
+      } else {
+        await insertActivity(input);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao salvar atividade.');
+      return;
     }
     setModalOpen(false);
     await load();
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from('activities').delete().eq('id', id);
-    if (error) { setError(error.message); return; }
+    try {
+      await deleteActivity(id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao excluir atividade.');
+      return;
+    }
     setModalOpen(false);
     await load();
   };
